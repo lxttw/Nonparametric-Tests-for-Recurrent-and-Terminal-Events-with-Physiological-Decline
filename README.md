@@ -1,5 +1,4 @@
 # Nonparametric-Tests-for-Recurrent-and-Terminal-Events-with-Physiological-Decline
-Nonparametric Tests for Treatment Effect Leveraging Information on Recurrent and Terminal Events and Physiological Decline
 
 estimation.R contains the core functions used to estimate the area under the longitudinal profile of τ-restricted, utility-adjusted mean event-free times for group g, g = 1, 2; and the variances, as described in the manuscript.
 
