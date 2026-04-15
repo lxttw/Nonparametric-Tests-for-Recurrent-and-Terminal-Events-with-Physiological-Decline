@@ -68,8 +68,8 @@ S_estimator2 <- S_estimator2_info$S_Q
 info2 <- S_estimator2_info$info
 
 
-mu_tau1 <- get_estimate_final(S_estimator1, t_vec) 
-mu_tau2 <- get_estimate_final(S_estimator2, t_vec) 
+AUC1 <- get_estimate_final(S_estimator1, t_vec) 
+AUC2 <- get_estimate_final(S_estimator2, t_vec) 
 start <- Sys.time()
 t_integrals1 <- get_var_estimator_parallel(t_vec, x_seq, tau, sample1, U1, S_estimator1, n2/(n1+n2), info1)
 t_integrals1[lower.tri(t_integrals1)] <- t(t_integrals1)[lower.tri(t_integrals1)]
@@ -82,8 +82,8 @@ row2  <- apply(t_integrals2 , 1, trapz, x = t_vec)
 var2 <- as.numeric(trapz(t_vec, row2)) 
 
 
-
-result <- t(c(mu_tau1, mu_tau2, var1, var2))
+# sqrt(n1n2/(n1+n2))*(AUC1-AUC2) is our proposed test statistic T_Q, and var1+var2 is the estimated variance for T_Q. 
+result <- t(c(AUC1, AUC2, var1, var2))
 t_integrals <- rbind(t_integrals1, t_integrals2)
 
 mu_t_tau1 <- rep(NA, nrow(S_estimator1))
