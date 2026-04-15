@@ -8,10 +8,7 @@ library(foreach)
 library(doParallel)
 library(Rcpp)
 library(RhpcBLASctl)
-RhpcBLASctl::blas_set_num_threads(1)
-RhpcBLASctl::omp_set_num_threads(1)
-seed <- as.integer(Sys.getenv("SLURM_ARRAY_TASK_ID")) + 20000
-job_id <- as.integer(Sys.getenv("SLURM_ARRAY_JOB_ID"))
+seed <- 100
 Rcpp::sourceCpp("helper.cpp")
 tol <- 1e-10
 
@@ -42,24 +39,17 @@ repeat {
   C2 <- runif(n2, 24, followup)*(1-follow_full2) + followup*follow_full2
   #C1 <- pmin(runif(n1, 24, followup),rexp(n1, rate_C))*(1-follow_full1) + followup*follow_full1
   #C2 <- pmin(runif(n2, 24, followup),rexp(n1, rate_C))*(1-follow_full2) + followup*follow_full2
-  #C1 <- rep(36, n1)
-  #C2 <- rep(36, n2)
   
   sample1_info <- gen_data(n1, J1, rho1, rho2, sd, rate_S1,rate_D1, C1, bad_qol=0.06)
   sample1 <- sample1_info[[1]]
   qol1 <- sample1_info[[2]]
-  #times <- seq(0, followup, by = 0.1)
-  #U1 <- as.data.frame(matrix(1, nrow = n1, ncol = length(times)))
-  #colnames(U1) <- times
+  # The parameters are r_g, h_g, d_g, and b_g
   U1 <- gen_U(sample1, qol1, 0.5, 1, 0.05, 0.2)
   
   sample2_info <- gen_data(n2, J2, rho1, rho2, sd, rate_S2, rate_D2, C2, bad_qol=0.06)
   sample2 <- sample2_info[[1]]
   qol2 <- sample2_info[[2]]
-  #U2 <- as.data.frame(matrix(1, nrow = n2, ncol = length(times)))
-  #colnames(U2) <- times
   U2 <- gen_U(sample2, qol2, 0.8, 0.5, 0.025, 0.3) 
-  #U2 <- gen_U(sample2, qol2, 0.5, 1, 0.05, 0.2)
   ok1 <- check_qol_censor(sample1, qol1)
   ok2 <- check_qol_censor(sample2, qol2)
   ok_go  <- ok1 && ok2
@@ -143,7 +133,6 @@ get_s_vec <- function(t, x, U_cum, U_new, times_new) {
   }
   return(s_vec)
 }
-
 
 
 
@@ -425,21 +414,7 @@ var2 <- as.numeric(trapz(t_vec, row2)) #1119.15332259, 442.4996
 
 
 result <- t(c(mu_tau1, mu_tau2, var1, var2))
-
-outdir    <- file.path("output", job_id)
-#if (!dir.exists(outdir)) dir.create(outdir, recursive = TRUE)
-outfile   <- file.path(outdir, paste0("result", seed, ".csv"))
-write.csv(result, outfile, row.names = FALSE)
-#write.csv(result, paste0("output/result", seed, ".csv"), row.names = F)
-
 t_integrals <- rbind(t_integrals1, t_integrals2)
-
-outdir.supp    <- file.path("output_supp", job_id)
-if (!dir.exists(outdir.supp)) dir.create(outdir.supp, recursive = TRUE)
-outfile.supp   <- file.path(outdir.supp, paste0("result", seed, ".csv"))
-write.csv(t_integrals, outfile.supp)
-
-
 
 mu_t_tau1 <- rep(NA, nrow(S_estimator1))
 for (i in 1:nrow(S_estimator1)) {
@@ -452,13 +427,8 @@ for (i in 1:nrow(S_estimator2)) {
 }
 
 mu_t_tau_combined <- rbind(mu_t_tau1, mu_t_tau2)
-rownames(mu_t_tau_combined) <- c("mu_t_tau1", "mu_t_tau2")
-outdir.est    <- file.path("output_estimates", job_id)
-if (!dir.exists(outdir.est)) dir.create(outdir.est, recursive = TRUE)
-outfile.est  <- file.path(outdir.est, paste0("result", seed, ".csv"))
-write.csv(mu_t_tau_combined, outfile.est)
 
-# 1000 obs: Time difference of 6.153167 hours
-# 500 obs: Time difference of 31.5173 mins
-# 200 obs: Time difference of 2.555598 mins
+# 1000 obs: 6.153167 hours per group
+# 500 obs: 31.5173 mins per group
+# 200 obs: 2.555598 mins per group
 
